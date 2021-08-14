@@ -38,7 +38,8 @@ export default {
       setInterval(() => {
         this.timer -= 1;
         this.checkTimer();
-        this.checkBlinking()
+        this.checkBlinking();
+        this.saveToLocal();
       }, 1000);
     },
     checkTimer() {
@@ -53,17 +54,24 @@ export default {
         this.activeLight =
           this.activeLight > 0 ? this.activeLight - 1 : this.activeLight + 1;
       }
-      this.setActiveLight(this.activeLight);
+      this.drawActiveLight(this.activeLight);
     },
-    setActiveLight() {
+    drawActiveLight() {
       this.lights.forEach((light, index) => {
         light.active = false;
         if (index === this.activeLight) {
           light.active = true;
-          this.timer = light.duration;
+          this.timer = this.timer ? this.timer : light.duration;
           if (this.$route.fullPath === light.url) return;
 
           this.$router.push(light.url);
+        }
+      });
+    },
+    getActiveLightByColor(color) {
+      this.lights.forEach((light, index) => {
+        if (light.url === "/" + color) {
+          this.activeLight = index;
         }
       });
     },
@@ -73,32 +81,55 @@ export default {
       } else if (this.activeLight === 0) this.direction = "top";
     },
     checkBlinking() {
-      if(this.timer <= 3) {
-        this.lights[this.activeLight].active = (3 % this.timer === 0)
+      if (this.timer <= 3) {
+        this.lights[this.activeLight].active = 3 % this.timer === 0;
       }
-    }
+    },
+    hasDataInLocal() {
+      if (
+        localStorage.getItem("timer") === null ||
+        localStorage.getItem("color") === null ||
+        localStorage.getItem("direction") === null
+      ) {
+        return false;
+      }
+      return true;
+    },
+    saveToLocal() {
+      localStorage.setItem("timer", this.timer);
+      localStorage.setItem("color", this.lights[this.activeLight].color);
+      localStorage.setItem("direction", this.direction);
+    },
+    getLocalData() {
+      this.timer = localStorage.getItem("timer");
+      this.direction = localStorage.getItem("direction");
+      const color = localStorage.getItem("color");
+      this.getActiveLightByColor(color);
+    },
   },
   async mounted() {
     const hasColorParam = await this.checkRouteParam();
-    if (!hasColorParam) {
+    if (!hasColorParam) { 
+      //set default behaviot
       this.activeLight = 0;
       this.direction = "bot";
-    }
-
-    this.lights.forEach((light, index) => {
-      if (light.url === "/" + this.$route.params.color) {
-        this.activeLight = index;
-      }
-    });
-
-    this.activeLight = this.activeLight ? this.activeLight : 0;
-    if(this.activeLight === 1) {
-      this.direction = 'top'
     } else {
-      this.setDirection()
+      // set color from url
+      const color = this.$route.params.color;
+      if (this.hasDataInLocal()) {
+        if (localStorage.getItem("color") === color) {
+          // set data from local
+          this.getLocalData();
+        } else {
+          // set default data start from color
+          this.getActiveLightByColor(color);
+        }
+      } else {
+        // set default data start from color
+        this.getActiveLightByColor(color);
+      }
     }
-
-    this.setActiveLight();
+    this.drawActiveLight();
     this.startTimer();
   },
 };
