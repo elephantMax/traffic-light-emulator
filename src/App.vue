@@ -38,6 +38,7 @@ export default {
       setInterval(() => {
         this.timer -= 1;
         this.checkTimer();
+        this.checkBlinking()
       }, 1000);
     },
     checkTimer() {
@@ -71,6 +72,11 @@ export default {
         this.direction = "bot";
       } else if (this.activeLight === 0) this.direction = "top";
     },
+    checkBlinking() {
+      if(this.timer <= 3) {
+        this.lights[this.activeLight].active = (3 % this.timer === 0)
+      }
+    }
   },
   async mounted() {
     const hasColorParam = await this.checkRouteParam();
