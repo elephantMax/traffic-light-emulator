@@ -60,6 +60,9 @@ export default {
         if (index === this.activeLight) {
           light.active = true;
           this.timer = light.duration;
+          if (this.$route.fullPath === light.url) return;
+
+          this.$router.push(light.url);
         }
       });
     },
@@ -72,11 +75,25 @@ export default {
   async mounted() {
     const hasColorParam = await this.checkRouteParam();
     if (!hasColorParam) {
-      this.activeLight = 2;
-      this.direction = "top";
-      this.setActiveLight();
-      this.startTimer();
+      this.activeLight = 0;
+      this.direction = "bot";
     }
+
+    this.lights.forEach((light, index) => {
+      if (light.url === "/" + this.$route.params.color) {
+        this.activeLight = index;
+      }
+    });
+
+    this.activeLight = this.activeLight ? this.activeLight : 0;
+    if(this.activeLight === 1) {
+      this.direction = 'top'
+    } else {
+      this.setDirection()
+    }
+
+    this.setActiveLight();
+    this.startTimer();
   },
 };
 </script>
